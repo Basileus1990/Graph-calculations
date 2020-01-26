@@ -1,30 +1,31 @@
 <MainWindow>:
     orientation: 'vertical'
-    graph: MainGraph
     # Main graph displaying results
-    Graph:
-        id: MainGraph
-        size_hint: None, None
-        size: self.parent.width, self.parent.width
-        background_color: [0.05, 0.05, 0.05, 1]
-        border_color: [0.5, 0.5, 0.5, 1]
-        padding: 5
-
-        xlabel: root.xlabel_name
-        ylabel: root.ylabel_name
-        xmax: root.xmax
-        xmin: root.xmin
-        ymax: root.ymax
-        ymin: root.ymin
-        x_ticks_major: int((root.xmax - root.xmin) / 10)
-        y_ticks_major: int((root.ymax - root.ymin) / 10)
-
-        x_grid: True
-        y_grid: True
-        x_grid_label: True
-        y_grid_label: True
-
+    MainGraph:
+        id: main_graph
     BoxLayout:
         Button:
             text: 'text'
-            on_touch_down: root.update_graph()
+            on_touch_down: root.ids.main_graph.update_graph()
+
+
+<MainGraph>:
+    size_hint: None, None
+    size: self.parent.width, self.parent.width
+    background_color: [0.05, 0.05, 0.05, 1]
+    border_color: [0.5, 0.5, 0.5, 1]
+    padding: 5
+
+    xlabel: root.xlabel_name
+    ylabel: root.ylabel_name
+    xmax: root.xmax
+    xmin: root.xmin
+    ymax: root.ymax
+    ymin: root.ymin
+    x_ticks_major: int((root.xmax - root.xmin) / 10)
+    y_ticks_major: int((root.ymax - root.ymin) / 10)
+
+    x_grid: True
+    y_grid: True
+    x_grid_label: True
+    y_grid_label: True
