@@ -1,12 +1,37 @@
+#:import MainGraph Classes.main_graph.MainGraph
+#:import ceil math.ceil
 <MainWindow>:
     orientation: 'vertical'
-    # Main graph displaying results
+    canvas:
+        Color:
+            rgba: root.bg_color
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    BoxLayout:
+        orientation: 'vertical'
+        # A settings bar also with Button which updates graph
+        BoxLayout:
+            size_hint_y: 0.3
+            Button:
+                text: 'Update Graph'
+                on_touch_down: root.ids.main_graph.update_graph()
+        Label:
+            size_hint: None, None
+            size: self.texture_size
+            font_size: 15
+            text: 'Your calculations:'
+            halign: 'right'
+        TextInput:
+            background_color: root.bg_color
+            foreground_color: [1, 1, 1, 1]
+            font_size: 24
+            text: 'y = '
+
+
+
     MainGraph:
         id: main_graph
-    BoxLayout:
-        Button:
-            text: 'text'
-            on_touch_down: root.ids.main_graph.update_graph()
 
 
 <MainGraph>:
@@ -22,8 +47,8 @@
     xmin: root.xmin
     ymax: root.ymax
     ymin: root.ymin
-    x_ticks_major: int((root.xmax - root.xmin) / 10)
-    y_ticks_major: int((root.ymax - root.ymin) / 10)
+    x_ticks_major: ceil((root.xmax - root.xmin) / 10)
+    y_ticks_major: ceil((root.ymax - root.ymin) / 10)
 
     x_grid: True
     y_grid: True
