@@ -9,11 +9,18 @@ Config.set('graphics', 'resizable', '0')
 
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
-from kivy.properties import ListProperty
+from kivy.properties import ListProperty, ObjectProperty
+from Classes import main_graph
+from Classes import calc_handler
 
 
 class MainWindow(BoxLayout):
     bg_color = ListProperty([0.05, 0.05, 0.05, 1])
+    main_window = ObjectProperty(None)
+
+    def __init__(self, **kwargs):
+        super(MainWindow, self).__init__(*kwargs)
+        self.main_window = self
 
 
 class GraphCalcApp(App):

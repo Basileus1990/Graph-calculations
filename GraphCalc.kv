@@ -1,6 +1,7 @@
 #:import MainGraph Classes.main_graph.MainGraph
 #:import ceil math.ceil
 <MainWindow>:
+    id: main_window
     orientation: 'vertical'
     canvas:
         Color:
@@ -10,12 +11,12 @@
             size: self.size
     BoxLayout:
         orientation: 'vertical'
-        # A settings bar also with Button which updates graph
+        # A settings bar and next to it Button which updates graph
         BoxLayout:
             size_hint_y: 0.3
             Button:
                 text: 'Update Graph'
-                on_touch_down: root.ids.main_graph.update_graph()
+                on_release: root.ids.main_graph.update_graph()
         Label:
             size_hint: None, None
             size: self.texture_size
@@ -23,15 +24,14 @@
             text: 'Your calculations:'
             halign: 'right'
         TextInput:
+            id: calc_input
             background_color: root.bg_color
             foreground_color: [1, 1, 1, 1]
             font_size: 24
-            text: 'y = '
-
-
-
+            text: 'y = 0'
     MainGraph:
         id: main_graph
+        main_window: root.main_window
 
 
 <MainGraph>:
