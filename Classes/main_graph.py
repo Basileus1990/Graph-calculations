@@ -21,9 +21,9 @@ class MainGraph(Graph):
         self.xlabel_name = 'X'
         self.ylabel_name = 'Y'
         self.xmin = 0
-        self.xmax = 100
-        self.ymin = 0
-        self.ymax = 10000
+        self.xmax = 10
+        self.ymin = -1
+        self.ymax = 1
 
     def update_graph(self):
         plot = SmoothLinePlot(color=[1, 0, 0, 1])

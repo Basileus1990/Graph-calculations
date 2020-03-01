@@ -1,4 +1,5 @@
 from kivy_garden.graph import SmoothLinePlot
+from math import sin, cos, log
 
 
 class CalcHandler:
@@ -13,7 +14,7 @@ class CalcHandler:
         self.calculations = main_window.ids.calc_input.text[4:]
         # self.add_brackets()  # adds proper brackets to self.calculations
         self.main_graph = main_window.ids.main_graph
-        self.accuracy = 1
+        self.accuracy = 10
 
     # return ready to be displayed plot
     def get_plot(self):
@@ -27,7 +28,8 @@ class CalcHandler:
     # returns result of given calculations with given x
     def get_result(self, x):
         working_calc = self.change_x_for_values(x)
-        # self.calculate_special_operators(current_calc)
+        working_calc = self.calculate_special_operators(working_calc)
+        # working_calc = self.add_additional_brackets(working_calc)
 
         return float(self.calculate(working_calc, 0))
 
@@ -41,11 +43,16 @@ class CalcHandler:
             x_pos = working_calc.find('x')
         return working_calc
 
+    # calculates special operators like: cos, sin, root, log
+    def calculate_special_operators(self, calc):
+        calc = self.calc_sin_cos(calc)
+        return calc
+
     # returns result(string) of given calculations
     def calculate(self, calc, starting_pos=0):
         subcalculation = ['', '', ''] # [first number, operator, second number]
         char_pos = starting_pos  # contains index of current character
-        while char_pos < len(calc):
+        while(char_pos < len(calc)):
             if isfloat(calc):
                 return calc
             # calls self to calculate contains of brackets and them
@@ -95,6 +102,39 @@ class CalcHandler:
 
         return (calc[:starting_pos] + self.operator_dict[subcalc[1]](subcalc) +
                 calc[end_pos:])
+
+    # calculates all sin(x) and cos(x) and returns calc with inserted results
+    def calc_sin_cos(self, calc):
+        for operator in ('sin', 'cos'):
+            pos = calc.find(operator)
+            end_pos = 0
+
+            while(not pos == -1):
+                # sets end_sin_pos
+                last_end_pos = 4
+                while(True):
+                    end_pos = calc[(pos + last_end_pos):].find(')')
+                    if calc[(pos + last_end_pos):end_pos].find('(') > 0:
+                        last_end_pos = end_pos
+                    else:
+                        break
+                if end_pos == -1:
+                    raise ValueError('\')\' not found')
+                end_pos += last_end_pos+pos
+
+                # calculates and inserts relults to calc
+                if operator == 'sin':
+                    calc = (calc[:pos] + str(sin(float(self.calculate(
+                           calc[(pos+4):(end_pos)])))) +
+                           calc[end_pos+1:])
+                else:
+                    calc = (calc[:pos] + str(cos(float(self.calculate(
+                           calc[(pos+4):(end_pos)])))) +
+                           calc[end_pos+1:])
+
+                pos = calc.find(operator)
+                end_pos = 0
+        return calc
 
 
 def isfloat(str):
