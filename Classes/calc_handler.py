@@ -48,20 +48,31 @@ class CalcHandler:
         while char_pos < len(calc):
             if isfloat(calc):
                 return calc
-            print(calc, subcalculation)
             # calls self to calculate contains of brackets and them
             # replaces them with a result
             if calc[char_pos] == '(':
                 calc = self.calculate(calc, (starting_pos + char_pos + 1))
 
-            # if calc[char_pos] is part of number then adds it to current_calc
-            if calc[char_pos] in '0123456789-.':
-                self.add_number(calc, char_pos, subcalculation, starting_pos)
+            # if calc[char_pos] is part of number then adds it to
+            # subcalculation
+            if calc[char_pos] in '0123456789-.' and not (
+                calc[char_pos] == '-' and calc[char_pos-1].isdigit() and not
+                    char_pos == 0):
+                if subcalculation[1] == '':
+                    subcalculation[0] += calc[char_pos]
+                else:
+                    subcalculation[2] += calc[char_pos]
 
             # adds operator to current_calc and if it is already set, it starts
             # the subcalculation
             elif calc[char_pos] in self.operator_dict.keys():
-                self.add_operator(calc, char_pos, subcalculation, starting_pos)
+                if subcalculation[1] == '':
+                    subcalculation[1] = calc[char_pos]
+                else:
+                    calc = self.insert_calculation(calc, subcalculation,
+                                                   starting_pos, char_pos)
+                    subcalculation = ['', '', '']
+                    char_pos = starting_pos - 1
 
             elif calc[char_pos] == ')':
                 if not subcalculation[1] == '':
@@ -69,7 +80,6 @@ class CalcHandler:
                                                    starting_pos, char_pos + 1)
                 return calc
             else:
-                print(calc, subcalculation)
                 raise ValueError('Unknown character: ', calc[char_pos])
             char_pos += 1
 
@@ -77,27 +87,6 @@ class CalcHandler:
             calc = self.insert_calculation(calc, subcalculation,
                                            starting_pos, char_pos)
         return calc
-
-    # if calc[char_pos] is part of number then adds it to subcalculation
-    def add_number(self, calc, char_pos, subcalculation, starting_pos):
-        # differs if '-' means a negative number or an operator
-        if (calc[char_pos] == '-' and not char_pos == 0
-                and calc[char_pos-1].isdigit()):
-            self.add_operator(calc, char_pos, subcalculation, starting_pos)
-
-        elif subcalculation[1] == '':
-            subcalculation[0] += calc[char_pos]
-        else:
-            subcalculation[2] += calc[char_pos]
-
-    def add_operator(self, calc, char_pos, subcalculation, starting_pos):
-        if subcalculation[1] == '':
-            subcalculation[1] = calc[char_pos]
-        else:
-            calc = self.insert_calculation(calc, subcalculation,
-                                           starting_pos, char_pos)
-            subcalculation = ['', '', '']
-            char_pos = starting_pos - 1
 
     # returns inserted result of subcalculation
     def insert_calculation(self, calc, subcalc, starting_pos, end_pos):
