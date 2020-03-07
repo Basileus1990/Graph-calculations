@@ -20,10 +20,10 @@ class MainGraph(Graph):
         # assigning the default values
         self.xlabel_name = 'X'
         self.ylabel_name = 'Y'
-        self.xmin = 0
-        self.xmax = 10
-        self.ymin = -1
-        self.ymax = 1
+        self.xmin = -4
+        self.xmax = 4
+        self.ymin = -4
+        self.ymax = 4
 
     def update_graph(self):
         plot = SmoothLinePlot(color=[1, 0, 0, 1])

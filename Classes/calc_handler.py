@@ -19,10 +19,16 @@ class CalcHandler:
     # return ready to be displayed plot
     def get_plot(self):
         plot = SmoothLinePlot(color=[1, 0, 0, 1])
-        plot.points = [(x / self.accuracy, self.get_result(
-            x / self.accuracy)) for x in range(
-                self.main_graph.xmin * self.accuracy,
-                self.main_graph.xmax * self.accuracy + 1)]
+        plot.points = []
+        for x in range(self.main_graph.xmin * self.accuracy,
+                       self.main_graph.xmax * self.accuracy + 1):
+            try:
+                result = self.get_result(x / self.accuracy)
+                plot.points.append((x / self.accuracy, result))
+            except ImpossibleToCalculateError as e:
+                if not str(e) == '':
+                    print(e)
+                continue
         return plot
 
     # returns result of given calculations with given x
@@ -46,6 +52,7 @@ class CalcHandler:
     # calculates special operators like: cos, sin, root, log
     def calculate_special_operators(self, calc):
         calc = self.calc_sin_cos(calc)
+        calc = self.calc_log(calc)
         return calc
 
     # returns result(string) of given calculations
@@ -125,16 +132,57 @@ class CalcHandler:
                 # calculates and inserts relults to calc
                 if operator == 'sin':
                     calc = (calc[:pos] + str(sin(float(self.calculate(
-                           calc[(pos+4):(end_pos)])))) +
-                           calc[end_pos+1:])
+                           calc[(pos+4):(end_pos)])))) + calc[end_pos+1:])
                 else:
                     calc = (calc[:pos] + str(cos(float(self.calculate(
-                           calc[(pos+4):(end_pos)])))) +
-                           calc[end_pos+1:])
+                           calc[(pos+4):(end_pos)])))) + calc[end_pos+1:])
 
                 pos = calc.find(operator)
                 end_pos = 0
         return calc
+
+    # calculates loga(b) => Logarithm of a given number 'b' with a base 'a'
+    def calc_log(self, calc):
+        pos = calc.find('log')
+        end_pos = 0
+
+        while(not pos == -1):
+            base = self.calculate(calc[pos + 3:calc.find('(', pos + 3)])
+            if base == '':
+                base = '10'
+            elif float(base) <= 0:
+                raise ImpossibleToCalculateError()
+            # sets end_pos
+            begining_pos = calc.find('(', pos + 3)  # pos of '('
+            last_end_pos = begining_pos
+            while(True):
+                end_pos = calc[last_end_pos:].find(')')
+                if calc[last_end_pos:end_pos].find('(') > 0:
+                    last_end_pos += end_pos
+                else:
+                    break
+            if end_pos == -1:
+                raise ValueError('\')\' not found')
+            end_pos += last_end_pos
+
+            number = self.calculate(calc[begining_pos + 1:end_pos])
+            if float(number) <= 0:
+                raise ImpossibleToCalculateError()
+            # calculates and inserts relults to calc
+            try:
+                calc = (calc[:pos] + str(log(float(number), float(base)))
+                        + calc[end_pos+1:])
+            except ZeroDivisionError:
+                raise ImpossibleToCalculateError()
+
+            pos = calc.find('log')
+            end_pos = 0
+        return calc
+
+
+# when raised the calculation is omitted and goes to the next one
+class ImpossibleToCalculateError(ValueError):
+    pass
 
 
 def isfloat(str):
