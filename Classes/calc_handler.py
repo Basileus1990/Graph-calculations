@@ -3,14 +3,19 @@ from math import sin, cos, log
 
 
 class CalcHandler:
-    # contains all basic operators that can be performed
-    operator_dict = {'+': lambda calc: str(float(calc[0]) + float(calc[2])),
-                     '-': lambda calc: str(float(calc[0]) - float(calc[2])),
-                     '*': lambda calc: str(float(calc[0]) * float(calc[2])),
-                     '/': lambda calc: str(float(calc[0]) / float(calc[2])),
-                     '^': lambda calc: str(float(calc[0]) ** float(calc[2]))}
-
     def __init__(self, main_window):
+        # contains all basic operators that can be performed
+        self.operator_dict = {'+': lambda calc: str(float(calc[0]) + float(calc[2])),
+                              '-': lambda calc: str(float(calc[0]) - float(calc[2])),
+                              '*': lambda calc: str(float(calc[0]) * float(calc[2])),
+                              '/': lambda calc: str(float(calc[0]) / float(calc[2])),
+                              '^': lambda calc: str(float(calc[0]) ** float(calc[2]))}
+        # contains all special operators that can be performed
+        self.special_operators_dict = {'sin': self.calc_sin_cos,
+                                       'cos': self.calc_sin_cos,
+                                       'log': self.calc_log,
+                                       'root': self.calc_root}
+
         self.calculations = main_window.ids.calc_input.text[4:]
         # self.add_brackets()  # adds proper brackets to self.calculations
         self.main_graph = main_window.ids.main_graph
@@ -53,19 +58,23 @@ class CalcHandler:
     def calculate_special_operators(self, calc):
         calc = self.calc_sin_cos(calc)
         calc = self.calc_log(calc)
+        calc = self.calc_root(calc)
         return calc
 
     # returns result(string) of given calculations
     def calculate(self, calc, starting_pos=0):
-        subcalculation = ['', '', ''] # [first number, operator, second number]
+        subcalculation = ['', '', '']  # [first number, operator, second number]
         char_pos = starting_pos  # contains index of current character
         while(char_pos < len(calc)):
             if isfloat(calc):
                 return calc
+
             # calls self to calculate contains of brackets and them
             # replaces them with a result
             if calc[char_pos] == '(':
-                calc = self.calculate(calc, (starting_pos + char_pos + 1))
+                calc = self.calculate(calc, (char_pos + 1))
+                if isfloat(calc):
+                    return calc
 
             # if calc[char_pos] is part of number then adds it to
             # subcalculation
@@ -92,7 +101,11 @@ class CalcHandler:
                 if not subcalculation[1] == '':
                     calc = self.insert_calculation(calc, subcalculation,
                                                    starting_pos, char_pos + 1)
+                else:
+                    calc = (calc[:starting_pos-1] +
+                            calc[starting_pos:char_pos] + calc[char_pos+1:])
                 return calc
+
             else:
                 raise ValueError('Unknown character: ', calc[char_pos])
             char_pos += 1
@@ -107,8 +120,12 @@ class CalcHandler:
         if starting_pos > 0:
             starting_pos -= 1
 
-        return (calc[:starting_pos] + self.operator_dict[subcalc[1]](subcalc) +
-                calc[end_pos:])
+        try:
+            return (calc[:starting_pos] + self.operator_dict[subcalc[1]](subcalc) +
+                    calc[end_pos:])
+        except KeyError as e:
+            print(calc)
+            raise e
 
     # calculates all sin(x) and cos(x) and returns calc with inserted results
     def calc_sin_cos(self, calc):
@@ -118,16 +135,7 @@ class CalcHandler:
 
             while(not pos == -1):
                 # sets end_sin_pos
-                last_end_pos = 4
-                while(True):
-                    end_pos = calc[(pos + last_end_pos):].find(')')
-                    if calc[(pos + last_end_pos):end_pos].find('(') > 0:
-                        last_end_pos = end_pos
-                    else:
-                        break
-                if end_pos == -1:
-                    raise ValueError('\')\' not found')
-                end_pos += last_end_pos+pos
+                calc, end_pos = self.find_internal_special_operators(calc, pos + 3)
 
                 # calculates and inserts relults to calc
                 if operator == 'sin':
@@ -154,16 +162,8 @@ class CalcHandler:
                 raise ImpossibleToCalculateError()
             # sets end_pos
             begining_pos = calc.find('(', pos + 3)  # pos of '('
-            last_end_pos = begining_pos
-            while(True):
-                end_pos = calc[last_end_pos:].find(')')
-                if calc[last_end_pos:end_pos].find('(') > 0:
-                    last_end_pos += end_pos
-                else:
-                    break
-            if end_pos == -1:
-                raise ValueError('\')\' not found')
-            end_pos += last_end_pos
+
+            calc, end_pos = self.find_internal_special_operators(calc, begining_pos)
 
             number = self.calculate(calc[begining_pos + 1:end_pos])
             if float(number) <= 0:
@@ -178,6 +178,69 @@ class CalcHandler:
             pos = calc.find('log')
             end_pos = 0
         return calc
+
+    # calculates roota(b) => root of a given number 'b' with a base 'a'
+    def calc_root(self, calc):
+        pos = calc.find('root')
+        end_pos = 0
+
+        while(not pos == -1):
+            base = self.calculate(calc[pos + 4:calc.find('(', pos + 4)])
+            if base == '':
+                base = '2'
+            elif float(base) <= 0:
+                raise ImpossibleToCalculateError()
+
+            begining_pos = calc.find('(', pos + 4)  # pos of '('
+
+            calc, end_pos = self.find_internal_special_operators(calc, begining_pos)
+
+            number = self.calculate(calc[begining_pos + 1:end_pos])
+            if float(number) <= 0:
+                raise ImpossibleToCalculateError()
+            # calculates and inserts relults to calc
+            calc = (calc[:pos] + str(float(number) ** (1/float(base)))
+                    + calc[end_pos+1:])
+
+            pos = calc.find('root')
+            end_pos = 0
+        return calc
+
+    # finds and returns positon of coresponding bracket
+    def find_end_bracked_pos(self, begining_pos, calc):
+        end_pos = begining_pos
+        while(True):
+            bracket_pos = calc[end_pos:].find(')')
+            # raises error when bracket does't have a corresponding bracket
+            if bracket_pos == -1:
+                raise ValueError('\')\' not found')
+
+            elif end_pos == begining_pos:
+                end_pos += bracket_pos
+            else:
+                end_pos += bracket_pos + 1
+
+            # checks if between bracket there are not other '('
+            is_end_pos = calc[begining_pos+1:end_pos].find('(')
+            if not is_end_pos == -1:
+                begining_pos += is_end_pos+1
+            else:
+                break
+        return end_pos
+
+    # finds and calculates special operators inside of another special
+    # operators if there are any
+    # retruns changed calc and end_pos
+    def find_internal_special_operators(self, calc, begining_pos):
+        end_pos = self.find_end_bracked_pos(begining_pos, calc)
+        for operator in self.special_operators_dict:
+            if calc[begining_pos + 1:end_pos].find(operator) > 0:
+                calc = (calc[:begining_pos+1] +
+                        self.special_operators_dict[operator](
+                        calc[begining_pos + 1:end_pos]) +
+                        calc[end_pos:])
+                end_pos = self.find_end_bracked_pos(begining_pos, calc)
+        return calc, end_pos
 
 
 # when raised the calculation is omitted and goes to the next one
