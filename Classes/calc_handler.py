@@ -1,4 +1,5 @@
 from kivy_garden.graph import SmoothLinePlot
+from . import main_graph
 from math import sin, cos, log
 
 
@@ -8,8 +9,8 @@ class CalcHandler:
         self.operator_dict = {'+': lambda calc: str(float(calc[0]) + float(calc[2])),
                               '-': lambda calc: str(float(calc[0]) - float(calc[2])),
                               '*': lambda calc: str(float(calc[0]) * float(calc[2])),
-                              '/': lambda calc: str(float(calc[0]) / float(calc[2])),
-                              '^': lambda calc: str(float(calc[0]) ** float(calc[2]))}
+                              '/': self.divide,
+                              '^': self.power}
         # contains all special operators that can be performed
         self.special_operators_dict = {'sin': self.calc_sin_cos,
                                        'cos': self.calc_sin_cos,
@@ -17,9 +18,10 @@ class CalcHandler:
                                        'root': self.calc_root}
 
         self.calculations = main_window.ids.calc_input.text[4:]
+        self.check_correctness(self.calculations)
         # self.add_brackets()  # adds proper brackets to self.calculations
         self.main_graph = main_window.ids.main_graph
-        self.accuracy = 10
+        self.accuracy = 10  # accuracy > 0
 
     # return ready to be displayed plot
     def get_plot(self):
@@ -43,6 +45,34 @@ class CalcHandler:
         # working_calc = self.add_additional_brackets(working_calc)
 
         return float(self.calculate(working_calc, 0))
+
+    def check_correctness(self, calc):
+        # checks if there are any spaces in calc, if so raises WrongInput
+        if calc.find(' ') >= 0:
+            raise main_graph.WrongInput()
+
+        # checks if operators ale placed properly
+        for operator in self.operator_dict.keys():
+            buffer_pos = 0
+            current_pos = 0
+            while(True):
+                buffer_pos = calc[current_pos:].find(operator)
+                if buffer_pos == -1:
+                    break
+                current_pos += buffer_pos
+                if (current_pos == 0 and not calc[current_pos] == '-' or
+                        current_pos == len(calc) - 1):
+                    raise main_graph.WrongInput('Operator can\'t be at' +
+                                                ' the begining or the end')
+
+                elif calc[current_pos] == '-':
+                    if not calc[current_pos+1] in '0123456789(-lscrx':
+                        raise main_graph.WrongInput(calc[current_pos-1:current_pos+2])
+
+                elif not (calc[current_pos-1] in '0123456789)lscrx' and
+                          calc[current_pos+1] in '0123456789(-lscrx'):
+                    raise main_graph.WrongInput(calc[current_pos-1:current_pos+2])
+                current_pos += 1
 
     # returns self.calculations but with replaced x for given number
     def change_x_for_values(self, x):
@@ -81,7 +111,13 @@ class CalcHandler:
             if calc[char_pos] in '0123456789-.' and not (
                 calc[char_pos] == '-' and calc[char_pos-1].isdigit() and not
                     char_pos == 0):
-                if subcalculation[1] == '':
+
+                # check if they arent't two minuses, if so they nullyfy eachotcher
+                if calc[char_pos] == '-' and calc[char_pos + 1] == '-':
+                    calc = calc[:char_pos] + calc[char_pos+2:]
+                    continue
+
+                elif subcalculation[1] == '':
                     subcalculation[0] += calc[char_pos]
                 else:
                     subcalculation[2] += calc[char_pos]
@@ -107,7 +143,7 @@ class CalcHandler:
                 return calc
 
             else:
-                raise ValueError('Unknown character: ', calc[char_pos])
+                raise main_graph.WrongInput('Unknown character: ', calc[char_pos])
             char_pos += 1
 
         if not subcalculation[0] == '':
@@ -241,6 +277,18 @@ class CalcHandler:
                         calc[end_pos:])
                 end_pos = self.find_end_bracked_pos(begining_pos, calc)
         return calc, end_pos
+
+    # retruns power of given numbers in calc, takes care of impossible roots
+    def power(self, calc):
+        if float(calc[0]) < 0 and isfloat(calc[2]):
+            raise ImpossibleToCalculateError()
+        return str(float(calc[0])**float(calc[2]))
+
+    # retunrs division of given numbers in calc, takes care of dividing by 0
+    def divide(self, calc):
+        if float(calc[2]) == 0:
+            raise ImpossibleToCalculateError()
+        return str(float(calc[0])/float(calc[2]))
 
 
 # when raised the calculation is omitted and goes to the next one

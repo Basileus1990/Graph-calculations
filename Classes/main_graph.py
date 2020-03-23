@@ -29,5 +29,13 @@ class MainGraph(Graph):
         plot = SmoothLinePlot(color=[1, 0, 0, 1])
         plot.points = [(x / 10, sin(x / 10)) for x in range(
             self.xmin * 10, self.xmax * 10 + 1)]
-        calc = CalcHandler(self.main_window)
+        try:
+            calc = CalcHandler(self.main_window)
+        except WrongInput as e:
+            print(e)
+            raise WrongInput()
         self.add_plot(calc.get_plot())
+
+
+class WrongInput(Exception):
+    pass
