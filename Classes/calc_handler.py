@@ -49,9 +49,13 @@ class CalcHandler:
     def check_correctness(self, calc):
         # checks if there are any spaces in calc, if so raises WrongInput
         if calc.find(' ') >= 0:
-            raise main_graph.WrongInput()
+            raise main_graph.WrongInput('You can\'t use spaces')
 
-        # checks if operators ale placed properly
+        self.check_operators_correctness(calc)
+        self.check_brackets(calc)
+
+    # checks if operators ale placed properly
+    def check_operators_correctness(self, calc):
         for operator in self.operator_dict.keys():
             buffer_pos = 0
             current_pos = 0
@@ -63,16 +67,66 @@ class CalcHandler:
                 if (current_pos == 0 and not calc[current_pos] == '-' or
                         current_pos == len(calc) - 1):
                     raise main_graph.WrongInput('Operator can\'t be at' +
-                                                ' the begining or the end')
+                                                ' the begining or the end: ' + calc[current_pos])
 
                 elif calc[current_pos] == '-':
                     if not calc[current_pos+1] in '0123456789(-lscrx':
-                        raise main_graph.WrongInput(calc[current_pos-1:current_pos+2])
+                        raise main_graph.WrongInput('Operators can\'t be next to eachother: ' +
+                                                    calc[current_pos-1:current_pos+2])
 
                 elif not (calc[current_pos-1] in '0123456789)lscrx' and
                           calc[current_pos+1] in '0123456789(-lscrx'):
-                    raise main_graph.WrongInput(calc[current_pos-1:current_pos+2])
+                    raise main_graph.WrongInput('Operators can\'t be next to eachother: ' +
+                                                calc[current_pos-1:current_pos+2])
                 current_pos += 1
+
+    # checks if brackets have a corresponding one and checks if operators
+    # brackets are placed properly
+    def check_brackets(self, calc):
+        bracket_pos = 0
+        bracket_buffer = 0
+        bracket_count = [0, 0]  # (, )
+        while(True):
+            bracket_buffer = calc[bracket_pos:].find('(')
+            if bracket_buffer == -1:
+                break
+            bracket_pos += bracket_buffer
+            self.find_end_bracked_pos(bracket_pos, calc)
+
+            if (not bracket_pos == 0 and not calc[bracket_pos-1] in '*/-+^ns(' and
+               self.check_if_log_or_root(calc, bracket_pos) is False):
+                raise main_graph.WrongInput('Before \"(\" has to be an operator')
+
+            bracket_count[0] += 1
+            bracket_pos += 1
+
+        bracket_pos = 0
+        while(True):
+            bracket_buffer = calc[bracket_pos:].find(')')
+            if bracket_buffer == -1:
+                break
+            bracket_pos += bracket_buffer
+
+            print(calc[bracket_pos])
+            if not bracket_pos == len(calc)-1 and not calc[bracket_pos+1] in '*/-+^lrsc)':
+                raise main_graph.WrongInput('After \")\" has to be an operator')
+
+            bracket_pos += 1
+            bracket_count[1] += 1
+
+        if not bracket_count[0] == bracket_count[1]:
+            raise main_graph.WrongInput('Missing brackets')
+
+    # chceck if is bracket of root or Logarithm
+    def check_if_log_or_root(self, calc, bracket_pos):
+        if bracket_pos < 3:
+            return False
+        current_pos = bracket_pos - 1
+        while(not calc[current_pos] in 'tg'):
+            if current_pos == 0:
+                return False
+            current_pos -= 1
+        return True
 
     # returns self.calculations but with replaced x for given number
     def change_x_for_values(self, x):
@@ -143,7 +197,7 @@ class CalcHandler:
                 return calc
 
             else:
-                raise main_graph.WrongInput('Unknown character: ', calc[char_pos])
+                raise main_graph.WrongInput('Unknown character: ' + calc[char_pos])
             char_pos += 1
 
         if not subcalculation[0] == '':
@@ -156,12 +210,15 @@ class CalcHandler:
         if starting_pos > 0:
             starting_pos -= 1
 
-        try:
-            return (calc[:starting_pos] + self.operator_dict[subcalc[1]](subcalc) +
-                    calc[end_pos:])
-        except KeyError as e:
-            print(calc)
-            raise e
+        if subcalc[2] == '':
+            raise main_graph.WrongInput('Wrong input: ' + subcalc[0] + subcalc[1])
+        else:
+            try:
+                return (calc[:starting_pos] + self.operator_dict[subcalc[1]](subcalc) +
+                        calc[end_pos:])
+            except KeyError as e:
+                print(calc)
+                raise e
 
     # calculates all sin(x) and cos(x) and returns calc with inserted results
     def calc_sin_cos(self, calc):
@@ -173,6 +230,9 @@ class CalcHandler:
                 # sets end_sin_pos
                 calc, end_pos = self.find_internal_special_operators(calc, pos + 3)
 
+                if calc[(pos+4):(end_pos)] == '':
+                    raise main_graph.WrongInput('Interior of bracket in special' +
+                                                ' operator can\'t be empty')
                 # calculates and inserts relults to calc
                 if operator == 'sin':
                     calc = (calc[:pos] + str(sin(float(self.calculate(
@@ -191,6 +251,8 @@ class CalcHandler:
         end_pos = 0
 
         while(not pos == -1):
+            # checks if base calculation doesn't have errors
+            self.check_operators_correctness(calc[pos + 3:calc.find('(', pos + 3)])
             base = self.calculate(calc[pos + 3:calc.find('(', pos + 3)])
             if base == '':
                 base = '10'
@@ -201,6 +263,9 @@ class CalcHandler:
 
             calc, end_pos = self.find_internal_special_operators(calc, begining_pos)
 
+            if calc[begining_pos + 1:end_pos] == '':
+                raise main_graph.WrongInput('Interior of bracket in special' +
+                                            ' operator can\'t be empty')
             number = self.calculate(calc[begining_pos + 1:end_pos])
             if float(number) <= 0:
                 raise ImpossibleToCalculateError()
@@ -221,6 +286,8 @@ class CalcHandler:
         end_pos = 0
 
         while(not pos == -1):
+            # checks if base calculation doesn't have errors
+            self.check_operators_correctness(calc[pos + 4:calc.find('(', pos + 4)])
             base = self.calculate(calc[pos + 4:calc.find('(', pos + 4)])
             if base == '':
                 base = '2'
@@ -231,6 +298,9 @@ class CalcHandler:
 
             calc, end_pos = self.find_internal_special_operators(calc, begining_pos)
 
+            if calc[begining_pos + 1:end_pos] == '':
+                raise main_graph.WrongInput('Interior of bracket in special' +
+                                            ' operator can\'t be empty')
             number = self.calculate(calc[begining_pos + 1:end_pos])
             if float(number) <= 0:
                 raise ImpossibleToCalculateError()
@@ -249,7 +319,7 @@ class CalcHandler:
             bracket_pos = calc[end_pos:].find(')')
             # raises error when bracket does't have a corresponding bracket
             if bracket_pos == -1:
-                raise ValueError('\')\' not found')
+                raise main_graph.WrongInput('\')\' not found')
 
             elif end_pos == begining_pos:
                 end_pos += bracket_pos

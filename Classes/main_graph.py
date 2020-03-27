@@ -31,10 +31,10 @@ class MainGraph(Graph):
             self.xmin * 10, self.xmax * 10 + 1)]
         try:
             calc = CalcHandler(self.main_window)
+            self.add_plot(calc.get_plot())
         except WrongInput as e:
             print(e)
-            raise WrongInput()
-        self.add_plot(calc.get_plot())
+            return
 
 
 class WrongInput(Exception):
