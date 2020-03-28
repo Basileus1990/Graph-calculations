@@ -1,4 +1,5 @@
 from kivy_garden.graph import SmoothLinePlot
+from .Correctness import Correctness
 from . import main_graph
 from math import sin, cos, log
 
@@ -18,17 +19,18 @@ class CalcHandler:
                                        'root': self.calc_root}
 
         self.calculations = main_window.ids.calc_input.text[4:]
-        self.check_correctness(self.calculations)
         # self.add_brackets()  # adds proper brackets to self.calculations
-        self.main_graph = main_window.ids.main_graph
+        self.main_graph_object = main_window.ids.main_graph
+        Correctness(main_graph, self, self.calculations)
+
         self.accuracy = 10  # accuracy > 0
 
     # return ready to be displayed plot
     def get_plot(self):
         plot = SmoothLinePlot(color=[1, 0, 0, 1])
         plot.points = []
-        for x in range(self.main_graph.xmin * self.accuracy,
-                       self.main_graph.xmax * self.accuracy + 1):
+        for x in range(self.main_graph_object.xmin * self.accuracy,
+                       self.main_graph_object.xmax * self.accuracy + 1):
             try:
                 result = self.get_result(x / self.accuracy)
                 plot.points.append((x / self.accuracy, result))
@@ -45,88 +47,6 @@ class CalcHandler:
         # working_calc = self.add_additional_brackets(working_calc)
 
         return float(self.calculate(working_calc, 0))
-
-    def check_correctness(self, calc):
-        # checks if there are any spaces in calc, if so raises WrongInput
-        if calc.find(' ') >= 0:
-            raise main_graph.WrongInput('You can\'t use spaces')
-
-        self.check_operators_correctness(calc)
-        self.check_brackets(calc)
-
-    # checks if operators ale placed properly
-    def check_operators_correctness(self, calc):
-        for operator in self.operator_dict.keys():
-            buffer_pos = 0
-            current_pos = 0
-            while(True):
-                buffer_pos = calc[current_pos:].find(operator)
-                if buffer_pos == -1:
-                    break
-                current_pos += buffer_pos
-                if (current_pos == 0 and not calc[current_pos] == '-' or
-                        current_pos == len(calc) - 1):
-                    raise main_graph.WrongInput('Operator can\'t be at' +
-                                                ' the begining or the end: ' + calc[current_pos])
-
-                elif calc[current_pos] == '-':
-                    if not calc[current_pos+1] in '0123456789(-lscrx':
-                        raise main_graph.WrongInput('Operators can\'t be next to eachother: ' +
-                                                    calc[current_pos-1:current_pos+2])
-
-                elif not (calc[current_pos-1] in '0123456789)lscrx' and
-                          calc[current_pos+1] in '0123456789(-lscrx'):
-                    raise main_graph.WrongInput('Operators can\'t be next to eachother: ' +
-                                                calc[current_pos-1:current_pos+2])
-                current_pos += 1
-
-    # checks if brackets have a corresponding one and checks if operators
-    # brackets are placed properly
-    def check_brackets(self, calc):
-        bracket_pos = 0
-        bracket_buffer = 0
-        bracket_count = [0, 0]  # (, )
-        while(True):
-            bracket_buffer = calc[bracket_pos:].find('(')
-            if bracket_buffer == -1:
-                break
-            bracket_pos += bracket_buffer
-            self.find_end_bracked_pos(bracket_pos, calc)
-
-            if (not bracket_pos == 0 and not calc[bracket_pos-1] in '*/-+^ns(' and
-               self.check_if_log_or_root(calc, bracket_pos) is False):
-                raise main_graph.WrongInput('Before \"(\" has to be an operator')
-
-            bracket_count[0] += 1
-            bracket_pos += 1
-
-        bracket_pos = 0
-        while(True):
-            bracket_buffer = calc[bracket_pos:].find(')')
-            if bracket_buffer == -1:
-                break
-            bracket_pos += bracket_buffer
-
-            print(calc[bracket_pos])
-            if not bracket_pos == len(calc)-1 and not calc[bracket_pos+1] in '*/-+^lrsc)':
-                raise main_graph.WrongInput('After \")\" has to be an operator')
-
-            bracket_pos += 1
-            bracket_count[1] += 1
-
-        if not bracket_count[0] == bracket_count[1]:
-            raise main_graph.WrongInput('Missing brackets')
-
-    # chceck if is bracket of root or Logarithm
-    def check_if_log_or_root(self, calc, bracket_pos):
-        if bracket_pos < 3:
-            return False
-        current_pos = bracket_pos - 1
-        while(not calc[current_pos] in 'tg'):
-            if current_pos == 0:
-                return False
-            current_pos -= 1
-        return True
 
     # returns self.calculations but with replaced x for given number
     def change_x_for_values(self, x):
@@ -183,7 +103,7 @@ class CalcHandler:
                     subcalculation[1] = calc[char_pos]
                 else:
                     calc = self.insert_calculation(calc, subcalculation,
-                                                   starting_pos, char_pos)
+                                                   starting_pos+1, char_pos)
                     subcalculation = ['', '', '']
                     char_pos = starting_pos - 1
 
