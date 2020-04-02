@@ -19,7 +19,6 @@ class CalcHandler:
                                        'root': self.calc_root}
 
         self.calculations = main_window.ids.calc_input.text[4:]
-        # self.add_brackets()  # adds proper brackets to self.calculations
         self.main_graph_object = main_window.ids.main_graph
         Correctness(main_graph, self, self.calculations)
 
@@ -43,8 +42,8 @@ class CalcHandler:
     # returns result of given calculations with given x
     def get_result(self, x):
         working_calc = self.change_x_for_values(x)
+        working_calc = self.add_additional_brackets(working_calc)
         working_calc = self.calculate_special_operators(working_calc)
-        # working_calc = self.add_additional_brackets(working_calc)
 
         return float(self.calculate(working_calc, 0))
 
@@ -57,6 +56,153 @@ class CalcHandler:
                             + working_calc[(x_pos + 1):])
             x_pos = working_calc.find('x')
         return working_calc
+
+    # Adds brackets assigned to operators to provide proper order of calculations
+    def add_additional_brackets(self, calc):
+        print(calc)
+        for operator in '^*/':
+            buffer_pos = 0
+            current_pos = 0
+
+            # finds and inserts brackets
+            while(True):
+                buffer_pos = calc[current_pos:].find(operator)
+                if buffer_pos == -1:
+                    break
+                current_pos += buffer_pos
+                op_bracket_pos = current_pos
+
+                # finds pos of opening bracket and inserts it
+                while(True):
+                    if op_bracket_pos == 0:
+                        break
+                    elif calc[op_bracket_pos - 1] in '/*-+^':
+                        # check if '-' is operator or negative number
+                        if (calc[op_bracket_pos - 1] == '-' and not op_bracket_pos == 1 and
+                                not calc[op_bracket_pos - 2] in '0123456789)'):
+                            op_bracket_pos -= 1
+                            continue
+
+                        buffer_bracket_pos = op_bracket_pos
+                        # check if operator belongs to log or root base, if so
+                        # changes op_bracket_pos to -1
+                        while(buffer_bracket_pos >= 1):
+                            if calc[buffer_bracket_pos - 1] in 'gt':
+                                op_bracket_pos = -1
+                                break
+                            elif calc[buffer_bracket_pos - 1] in '()':
+                                break
+                            buffer_bracket_pos -= 1
+                        break
+
+                    elif calc[op_bracket_pos - 1] == '(':
+                        break
+
+                    # look for coresponding opening bracket and checks if this
+                    # if this bracket does't belong to special operator. then
+                    # sets proper pos for bracket
+                    elif calc[op_bracket_pos - 1] == ')':
+                        closing_bracket_count = 1
+                        op_bracket_pos -= 1
+                        while(True):
+                            if calc[op_bracket_pos - 1] == ')':
+                                closing_bracket_count += 1
+                            elif calc[op_bracket_pos - 1] == '(':
+                                if closing_bracket_count > 1:
+                                    closing_bracket_count -= 1
+                                    op_bracket_pos -= 1
+                                    continue
+
+                                # check if before bracket is special operator
+                                elif calc[op_bracket_pos - 2] in '0123456789gtns':
+                                    op_bracket_pos_buffer = op_bracket_pos
+                                    while(op_bracket_pos_buffer > 0):
+                                        op_bracket_pos_buffer -= 1
+                                        if calc[op_bracket_pos_buffer] in 'lrsc':
+                                            op_bracket_pos = op_bracket_pos_buffer
+                                            break
+                                    break
+                                else:
+                                    break
+                                break
+                            op_bracket_pos -= 1
+                        break
+                    op_bracket_pos -= 1
+
+                # if bracket can't be assigned to operator go to the next one
+                if op_bracket_pos == -1:
+                    current_pos += 1
+                    continue
+
+                # finds pos of ending bracket and inserts it
+                en_bracket_pos = current_pos
+                while(True):
+                    if en_bracket_pos == len(calc)-1:
+                        break
+                    if calc[en_bracket_pos + 1] in '/*-+^':
+                        # check if '-' is operator or negative number
+                        if calc[en_bracket_pos + 1] == '-' and en_bracket_pos == current_pos:
+                            en_bracket_pos += 1
+                            continue
+
+                        buffer_bracket_pos = en_bracket_pos
+                        # check if operator belongs to log or root base, if so
+                        # changes bracket_pos to -1
+                        while(buffer_bracket_pos >= 1):
+                            if calc[buffer_bracket_pos - 1] in 'gt':
+                                en_bracket_pos = -1
+                                break
+                            elif calc[buffer_bracket_pos - 1] in '()':
+                                break
+                            buffer_bracket_pos -= 1
+                        break
+
+                    elif calc[en_bracket_pos + 1] == ')':
+                        break
+
+                    # if calc[en_bracket_pos + 1] == (, then find corresponding
+                    # closing bracket and insert another closing brackets
+                    elif calc[en_bracket_pos + 1] == '(':
+                        opening_bracket_count = 0
+                        while(True):
+                            if calc[en_bracket_pos + 1] == '(':
+                                opening_bracket_count += 1
+                            elif calc[en_bracket_pos + 1] == ')':
+                                if not opening_bracket_count == 1:
+                                    opening_bracket_count -= 1
+                                else:
+                                    break
+                            en_bracket_pos += 1
+
+                    # if encounters special operator find end of it
+                    elif calc[en_bracket_pos + 1] in 'lrsc':
+                        while(True):
+                            if calc[en_bracket_pos + 1] == '(':
+                                opening_bracket_count = 1
+                                en_bracket_pos += 1
+                                while(True):
+                                    if calc[en_bracket_pos + 1] == '(':
+                                        opening_bracket_count += 1
+                                    elif calc[en_bracket_pos + 1] == ')':
+                                        if opening_bracket_count > 1:
+                                            opening_bracket_count -= 1
+                                        else:
+                                            break
+                                    en_bracket_pos += 1
+                                break
+                            en_bracket_pos += 1
+                        break
+                    en_bracket_pos += 1
+                if en_bracket_pos == -1:
+                    current_pos += 1
+                    continue
+
+                calc = calc[:op_bracket_pos] + '(' + calc[op_bracket_pos:]
+                calc = calc[:en_bracket_pos+2] + ')' + calc[en_bracket_pos+2:]
+                print(calc)
+                current_pos += 3
+        print(calc)
+        return calc
 
     # calculates special operators like: cos, sin, root, log
     def calculate_special_operators(self, calc):
@@ -172,11 +318,13 @@ class CalcHandler:
 
         while(not pos == -1):
             # checks if base calculation doesn't have errors
-            self.check_operators_correctness(calc[pos + 3:calc.find('(', pos + 3)])
-            base = self.calculate(calc[pos + 3:calc.find('(', pos + 3)])
-            if base == '':
+            base = 0
+            if calc[pos + 3:calc.find('(', pos + 3)] == '':
                 base = '10'
-            elif float(base) <= 0:
+            else:
+                Correctness(main_graph, self, calc[pos + 3:calc.find('(', pos + 3)])
+                base = self.calculate(calc[pos + 3:calc.find('(', pos + 3)])
+            if float(base) <= 0:
                 raise ImpossibleToCalculateError()
             # sets end_pos
             begining_pos = calc.find('(', pos + 3)  # pos of '('
@@ -207,11 +355,13 @@ class CalcHandler:
 
         while(not pos == -1):
             # checks if base calculation doesn't have errors
-            self.check_operators_correctness(calc[pos + 4:calc.find('(', pos + 4)])
-            base = self.calculate(calc[pos + 4:calc.find('(', pos + 4)])
-            if base == '':
+            base = 0
+            if calc[pos + 4:calc.find('(', pos + 4)] == '':
                 base = '2'
-            elif float(base) <= 0:
+            else:
+                Correctness(main_graph, self, calc[pos + 4:calc.find('(', pos + 4)])
+                base = self.calculate(calc[pos + 4:calc.find('(', pos + 4)])
+            if float(base) <= 0:
                 raise ImpossibleToCalculateError()
 
             begining_pos = calc.find('(', pos + 4)  # pos of '('
