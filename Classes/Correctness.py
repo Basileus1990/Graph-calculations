@@ -16,6 +16,7 @@ class Correctness:
         if calc.find(' ') >= 0 or calc.find('\n') >= 0 or calc.find('\t') >= 0:
             raise self.main_graph.WrongInput('There can\'t be any gaps between')
 
+        self.check_dots(calc)
         self.check_operators_correctness(calc)
         self.check_brackets(calc)
 
@@ -91,3 +92,22 @@ class Correctness:
                 return False
             current_pos -= 1
         return True
+
+    # checks if dots are surrounded by numbers, if not raises WrongInput error
+    def check_dots(self, calc):
+        dot_pos = 0
+        dot_pos_buffer = 0
+        while(True):
+            dot_pos_buffer = calc[dot_pos:].find('.')
+            if dot_pos_buffer == -1:
+                break
+
+            dot_pos += dot_pos_buffer
+
+            if dot_pos in (0, len(calc) - 1):
+                raise self.main_graph.WrongInput('Dot can\'t be at the begining' +
+                                                 'or at the end')
+            elif not calc[dot_pos - 1].isnumeric() or not calc[dot_pos + 1].isnumeric():
+                raise self.main_graph.WrongInput('Dots must be surrounded by numbers: ' +
+                                                 calc[dot_pos-1:dot_pos+2])
+            dot_pos += 1

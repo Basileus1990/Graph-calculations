@@ -59,7 +59,6 @@ class CalcHandler:
 
     # Adds brackets assigned to operators to provide proper order of calculations
     def add_additional_brackets(self, calc):
-        print(calc)
         for operator in '^*/':
             buffer_pos = 0
             current_pos = 0
@@ -199,9 +198,7 @@ class CalcHandler:
 
                 calc = calc[:op_bracket_pos] + '(' + calc[op_bracket_pos:]
                 calc = calc[:en_bracket_pos+2] + ')' + calc[en_bracket_pos+2:]
-                print(calc)
                 current_pos += 3
-        print(calc)
         return calc
 
     # calculates special operators like: cos, sin, root, log
