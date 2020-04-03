@@ -36,12 +36,12 @@ class Correctness:
                                                      ' the begining or the end: ' + calc[current_pos])
 
                 elif calc[current_pos] == '-':
-                    if not calc[current_pos+1] in '0123456789(-lscrx':
+                    if calc[current_pos+1] in ')^/*+':
                         raise self.main_graph.WrongInput('Operators can\'t be next to eachother: ' +
                                                          calc[current_pos-1:current_pos+2])
 
-                elif not (calc[current_pos-1] in '0123456789)lscrx' and
-                          calc[current_pos+1] in '0123456789(-lscrx'):
+                elif (calc[current_pos-1] in '(^/*-+' or
+                      calc[current_pos+1] in ')+*/^'):
                     raise self.main_graph.WrongInput('Operators can\'t be next to eachother: ' +
                                                      calc[current_pos-1:current_pos+2])
                 current_pos += 1
