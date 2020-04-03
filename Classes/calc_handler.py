@@ -18,11 +18,13 @@ class CalcHandler:
                                        'log': self.calc_log,
                                        'root': self.calc_root}
 
+        if not main_window.ids.calc_input.text[:4] == 'y = ':
+            raise main_graph.WrongInput('Calcutaions have to begin with \"y = \"')
         self.calculations = main_window.ids.calc_input.text[4:]
         self.main_graph_object = main_window.ids.main_graph
         Correctness(main_graph, self, self.calculations)
 
-        self.accuracy = 10  # accuracy > 0
+        self.accuracy = 100  # accuracy > 0
 
     # return ready to be displayed plot
     def get_plot(self):
@@ -77,8 +79,8 @@ class CalcHandler:
                         break
                     elif calc[op_bracket_pos - 1] in '/*-+^':
                         # check if '-' is operator or negative number
-                        if (calc[op_bracket_pos - 1] == '-' and not op_bracket_pos == 1 and
-                                not calc[op_bracket_pos - 2] in '0123456789)'):
+                        if (calc[op_bracket_pos - 1] == '-' and (op_bracket_pos == 1 or
+                                not calc[op_bracket_pos - 2] in '0123456789)')):
                             op_bracket_pos -= 1
                             continue
 
@@ -220,6 +222,7 @@ class CalcHandler:
             # replaces them with a result
             if calc[char_pos] == '(':
                 calc = self.calculate(calc, (char_pos + 1))
+                continue
                 if isfloat(calc):
                     return calc
 
@@ -388,10 +391,7 @@ class CalcHandler:
             if bracket_pos == -1:
                 raise main_graph.WrongInput('\')\' not found')
 
-            elif end_pos == begining_pos:
-                end_pos += bracket_pos
-            else:
-                end_pos += bracket_pos + 1
+            end_pos += bracket_pos
 
             # checks if between bracket there are not other '('
             is_end_pos = calc[begining_pos+1:end_pos].find('(')
@@ -399,6 +399,7 @@ class CalcHandler:
                 begining_pos += is_end_pos+1
             else:
                 break
+            end_pos += 1
         return end_pos
 
     # finds and calculates special operators inside of another special
@@ -417,7 +418,7 @@ class CalcHandler:
 
     # retruns power of given numbers in calc, takes care of impossible roots
     def power(self, calc):
-        if float(calc[0]) < 0 and isfloat(calc[2]):
+        if float(calc[0]) < 0 and not calc[2].isnumeric():
             raise ImpossibleToCalculateError()
         return str(float(calc[0])**float(calc[2]))
 
