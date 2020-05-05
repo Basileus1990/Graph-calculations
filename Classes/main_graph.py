@@ -1,5 +1,7 @@
 from kivy_garden.graph import Graph, SmoothLinePlot
 from kivy.properties import NumericProperty, StringProperty
+import ctypes
+from kivy.core.audio import SoundLoader
 from math import sin
 from Classes.calc_handler import CalcHandler
 
@@ -33,9 +35,14 @@ class MainGraph(Graph):
             calc = CalcHandler(self.main_window)
             self.add_plot(calc.get_plot())
         except WrongInput as e:
+            e.display_error_message()
             print(e)
             return
 
 
 class WrongInput(Exception):
-    pass
+    # displays error message and plays an error sound
+    def display_error_message(self):
+        # error_sound = SoundLoader.load('')  #  TO DO #####################
+
+        ctypes.windll.user32.MessageBoxW(0, str(self), 'Your input isn\'t correct!', 0)

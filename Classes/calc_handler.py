@@ -24,7 +24,7 @@ class CalcHandler:
         self.main_graph_object = main_window.ids.main_graph
         Correctness(main_graph, self, self.calculations)
 
-        self.accuracy = 100  # accuracy > 0
+        self.accuracy = 10  # accuracy > 0
 
     # return ready to be displayed plot
     def get_plot(self):
@@ -372,7 +372,7 @@ class CalcHandler:
                 raise main_graph.WrongInput('Interior of bracket in special' +
                                             ' operator can\'t be empty')
             number = self.calculate(calc[begining_pos + 1:end_pos])
-            if float(number) <= 0:
+            if float(number) < 0:
                 raise ImpossibleToCalculateError()
             # calculates and inserts relults to calc
             calc = (calc[:pos] + str(float(number) ** (1/float(base)))
