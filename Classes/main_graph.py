@@ -39,6 +39,11 @@ class MainGraph(Graph):
             print(e)
             return
 
+    # Removes all plots from graph
+    def reset_graph(self):
+        for i in range(len(self.plots)):
+            self.remove_plot(self.plots[0])
+
 
 class WrongInput(Exception):
     # displays error message and plays an error sound

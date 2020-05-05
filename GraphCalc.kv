@@ -13,7 +13,15 @@
         orientation: 'vertical'
         # A settings bar and next to it Button which updates graph
         BoxLayout:
+            orientation: 'horizontal'
             size_hint_y: 0.3
+
+            # Reset button
+            Button:
+                text: 'Reset'
+                on_release: root.ids.main_graph.reset_graph()
+
+            # Uptade button
             Button:
                 text: 'Update Graph'
                 on_release: root.ids.main_graph.update_graph()
