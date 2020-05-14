@@ -408,7 +408,7 @@ class CalcHandler:
     def find_internal_special_operators(self, calc, begining_pos):
         end_pos = self.find_end_bracked_pos(begining_pos, calc)
         for operator in self.special_operators_dict:
-            if calc[begining_pos + 1:end_pos].find(operator) > 0:
+            if calc[begining_pos:end_pos].find(operator) > 0:
                 calc = (calc[:begining_pos+1] +
                         self.special_operators_dict[operator](
                         calc[begining_pos + 1:end_pos]) +
