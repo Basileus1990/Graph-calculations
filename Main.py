@@ -10,8 +10,6 @@ Config.set('graphics', 'resizable', '0')
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import ListProperty, ObjectProperty
-from os import path
-
 
 
 class MainWindow(BoxLayout):

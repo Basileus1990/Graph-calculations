@@ -1,9 +1,12 @@
 from kivy_garden.graph import Graph, SmoothLinePlot
 from kivy.properties import NumericProperty, StringProperty
 import ctypes
-from kivy.core.audio import SoundLoader
+import pathlib
+import pygame
 from math import sin
 from Classes.calc_handler import CalcHandler
+
+pygame.init()
 
 
 class MainGraph(Graph):
@@ -48,6 +51,8 @@ class MainGraph(Graph):
 class WrongInput(Exception):
     # displays error message and plays an error sound
     def display_error_message(self):
-        # error_sound = SoundLoader.load('')  #  TO DO #####################
+        sound_path = str(pathlib.Path(__file__).parent.parent.absolute()) + '\\Audio\\Error Sound.mp3'
+        pygame.mixer.music.load(sound_path)
+        pygame.mixer.music.play()
 
         ctypes.windll.user32.MessageBoxW(0, str(self), 'Your input isn\'t correct!', 0)
